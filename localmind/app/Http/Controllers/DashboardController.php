@@ -2,66 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Question;
+use App\Models\Favorite;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
-class AuthController extends Controller
+class FavoriteController extends Controller
 {
-    public function showRegister()
+    public function toggle($questionId)
     {
-        return view('auth.register');
-    }
+        $question = Question::findOrFail($questionId);
+        $user = auth()->user();
 
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+        $favorite = Favorite::where('user_id', $user->id)
+            ->where('question_id', $question->id)
+            ->first();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'user',
-        ]);
-
-        Auth::login($user);
-
-        return redirect()->route('dashboard')->with('success', 'Inscription réussie !');
-    }
-
-    public function showLogin()
-    {
-        return view('auth.login');
-    }
-
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('dashboard')->with('success', 'Connexion réussie !');
+        if ($favorite) {
+            $favorite->delete();
+            $message = 'Question retirée des favoris.';
+        } else {
+            Favorite::create([
+                'user_id' => $user->id,
+                'question_id' => $question->id,
+            ]);
+            $message = 'Question ajoutée aux favoris !';
         }
 
-        return back()->withErrors([
-            'email' => 'Les identifiants fournis sont incorrects.',
-        ])->onlyInput('email');
+        return back()->with('success', $message);
     }
 
-    public function logout(Request $request)
+    public function index()
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $favorites = auth()->user()->favorites()
+            ->with('question.user')
+            ->latest()
+            ->paginate(10);
 
-        return redirect()->route('login')->with('success', 'Déconnexion réussie !');
+        return view('questions.favorites', compact('favorites'));
     }
 }
