@@ -9,13 +9,16 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('questions', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
-    }
+     public function up(): void {
+    Schema::create('questions', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('user_id')->constrained()->onDelete('cascade'); // مول السؤال
+        $table->string('title');
+        $table->text('content');
+        $table->string('location');
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.
