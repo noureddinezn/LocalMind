@@ -26,7 +26,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // Relations
     public function questions()
     {
         return $this->hasMany(Question::class);
@@ -42,7 +41,6 @@ class User extends Authenticatable
         return $this->hasMany(Favorite::class);
     }
 
-    // Helper methods
     public function isAdmin()
     {
         return $this->role === 'admin';
