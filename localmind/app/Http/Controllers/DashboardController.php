@@ -3,41 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
-use App\Models\Favorite;
-use Illuminate\Http\Request;
+use App\Models\Response;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
-class FavoriteController extends Controller
+class DashboardController extends Controller
 {
-    public function toggle($questionId)
-    {
-        $question = Question::findOrFail($questionId);
-        $user = auth()->user();
-
-        $favorite = Favorite::where('user_id', $user->id)
-            ->where('question_id', $question->id)
-            ->first();
-
-        if ($favorite) {
-            $favorite->delete();
-            $message = 'Question retirée des favoris.';
-        } else {
-            Favorite::create([
-                'user_id' => $user->id,
-                'question_id' => $question->id,
-            ]);
-            $message = 'Question ajoutée aux favoris !';
-        }
-
-        return back()->with('success', $message);
-    }
-
     public function index()
     {
-        $favorites = auth()->user()->favorites()
-            ->with('question.user')
-            ->latest()
-            ->paginate(10);
+        $user = Auth::user();
 
-        return view('questions.favorites', compact('favorites'));
+        $stats = [
+            'total_questions' => Question::count(),
+            'total_responses' => Response::count(),
+            'total_users' => User::count(),
+            'my_questions' => $user->questions()->count(),
+            'my_responses' => $user->responses()->count(),
+            'my_favorites' => $user->favorites()->count(),
+        ];
+
+        $popularQuestions = Question::query()
+            ->with(['user'])
+            ->withCount('responses')
+            ->orderByDesc('responses_count')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return view('dashboard.index', compact('stats', 'popularQuestions'));
     }
 }

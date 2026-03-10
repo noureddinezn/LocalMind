@@ -3,32 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 
-class User extends Authenticatable
+class Question extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',
+        'user_id',
+        'title',
+        'content',
+        'location',
+        'latitude',
+        'longitude',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
-    public function questions()
+    public function user()
     {
-        return $this->hasMany(Question::class);
+        return $this->belongsTo(User::class);
     }
 
     public function responses()
@@ -39,15 +31,5 @@ class User extends Authenticatable
     public function favorites()
     {
         return $this->hasMany(Favorite::class);
-    }
-
-    public function isAdmin()
-    {
-        return $this->role === 'admin';
-    }
-
-    public function hasFavorited($questionId)
-    {
-        return $this->favorites()->where('question_id', $questionId)->exists();
     }
 }
